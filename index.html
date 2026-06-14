@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Bateau"/>
+<meta name="color-scheme" content="light"/>
+<meta name="theme-color" content="#ffffff"/>
+<title>Bateau</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg:      #f5f5f5;
+  --surface: #ffffff;
+  --card:    #ffffff;
+  --accent:  #1a7fc4;
+  --gold:    #b07800;
+  --alert:   #c0392b;
+  --green:   #1a7a3c;
+  --text:    #111111;
+  --sub:     #444444;
+  --muted:   #888888;
+  --border:  #dddddd;
+  --r:       14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; scroll-behavior: smooth; }
+html, body {
+  min-height:100%; background:#f5f5f5 !important; color:#111111 !important;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif; font-size:16px;
+  forced-color-adjust: none;
+}
+@media (prefers-color-scheme: dark) {
+  html, body { background:#f5f5f5 !important; color:#111 !important; }
+  #header { background:#ffffff !important; }
+  #nav { background:#ffffff !important; }
+  .card { background:#ffffff !important; }
+  .stat { background:#f8f8f8 !important; }
+  .h-item { background:#ffffff !important; }
+  .result-box { background:#f8f8f8 !important; }
+  .field input:not([type="checkbox"]), .field select, .field textarea { background:#f8f8f8 !important; color:#111 !important; border-color: #ccc !important; }
+  .btn-s { background:#f0f0f0 !important; color:#111 !important; }
+  .btn-d { background:#fff0ee !important; color:#c0392b !important; }
+}
+
+#header {
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  padding:max(env(safe-area-inset-top),20px) 18px 20px;
+  background:#ffffff; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.app-name { font-size:20px; font-weight:900; color:#111; letter-spacing:-.5px; cursor:pointer; padding: 10px 20px 10px 0; margin-left: -5px; }
+.jauge-mini { display:flex; align-items:center; gap:8px; cursor:pointer; padding: 10px 0 10px 25px; margin-right: -5px; }
+.jauge-bar  { width:60px; height:7px; background:#ddd; border-radius:3px; overflow:hidden; }
+.jauge-fill { height:100%; border-radius:3px; background:#111; transition:width .4s,background .4s; }
+.jauge-pct  { font-size:13px; font-weight:700; color:#111; min-width:34px; text-align:right; }
+
+#nav {
+  position:fixed; bottom:0; left:0; right:0; z-index:100;
+  background:#ffffff;
+  padding:10px 8px calc(env(safe-area-inset-bottom)+6px);
+  display:flex; gap:5px;
+}
+#nav button {
+  flex:1; border:none; background:transparent; color:#888888;
+  padding:8px 2px 7px; font-size:10px; font-weight:700; letter-spacing:.2px;
+  text-transform:uppercase; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  border-radius:16px; transition:background .15s,color .15s;
+}
+#nav button .ico { font-size:20px; line-height:1; }
+#nav button.active { background:#111; color:#fff; }
+
+#main { padding-top:96px; padding-bottom:108px; min-height:100vh; }
+.panel { display:none; padding:14px 14px 0; }
+.panel.active { display:block; }
+
+.card { background:#ffffff; border:1.5px solid #ddd; border-radius:var(--r); padding:16px; margin-bottom:12px; }
+.card-title { font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:#888888; margin-bottom:12px; }
+
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:12px; }
+.stat { background:#f8f8f8; border-radius:12px; padding:14px; border:1.5px solid #ddd; }
+.stat-val { font-size:24px; font-weight:800; letter-spacing:-1px; color:#111; }
+.stat-val.warn { color:var(--gold); }
+.stat-val.danger { color:var(--alert); }
+.stat-lbl { font-size:11px; color:#888; margin-top:3px; font-weight:600; }
+
+.jauge-litres-display { text-align:center; font-size:36px; font-weight:900; letter-spacing:-2px; margin-bottom:6px; transition:color .4s; }
+.jauge-track { height:26px; background:#eee; border-radius:8px; overflow:hidden; margin:0 0 6px; }
+.jauge-inner { height:100%; border-radius:8px; transition:width .5s,background .4s; }
+.jauge-labels { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); font-weight:600; }
+
+.field { margin-bottom:11px; }
+.field label { display:block; font-size:14px; font-weight:700; color:#111; margin-bottom:4px; }
+.field input:not([type="checkbox"]), .field select, .field textarea {
+  width:100%; background:#f8f8f8; border:1.5px solid #ccc;
+  border-radius:10px; padding:12px 13px; font-size:16px; color:#111;
+  outline:none; font-family:inherit; -webkit-appearance:none; appearance:none;
+  transition:border-color .2s;
+  color-scheme: light;
+}
+.field input[type="checkbox"] {
+  width: 24px; height: 24px; cursor: pointer; accent-color: var(--green);
+}
+.field textarea { resize: vertical; min-height: 80px; }
+.field input:not([type="checkbox"]):focus, .field select:focus, .field textarea:focus { border-color:#111; }
+.field input::placeholder, .field textarea::placeholder { color:#aaa; font-style:italic; }
+.field select option { background:#ffffff; color:#111; }
+.field-row { display:flex; gap:8px; }
+.field-row .field { flex:1; }
+.req { color: var(--alert); }
+
+.btn { width:100%; padding:14px; border-radius:12px; font-size:16px; font-weight:700; border:none; cursor:pointer; font-family:inherit; display:block; margin-bottom:9px; transition:opacity .15s,transform .1s; }
+.btn:active { opacity:.75; transform:scale(.98); }
+.btn:last-child { margin-bottom:0; }
+.btn-p { background:#111; color:#fff; }
+.btn-g { background:#1a7a3c; color:#fff; }
+.btn-s { background:#f0f0f0; color:#111; border:1.5px solid #bbb; }
+.btn-d { background:#fff0ee; color:#c0392b; border:1.5px solid #f0c0b8; }
+
+.result-box { background:#f8f8f8; border-radius:12px; padding:14px; margin-bottom:12px; border:1.5px solid #ddd; }
+.r-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid #eee; }
+.r-row:last-child { border-bottom:none; }
+.r-lbl { font-size:15px; color:var(--sub); }
+.r-val { font-size:16px; font-weight:700; color:#111; }
+
+.h-item { background:#ffffff; border-radius:12px; padding:13px; margin-bottom:9px; border:1.5px solid #e0e0e0; border-left:4px solid #111; }
+.h-item.plein { border-left-color:var(--green); }
+.h-item.ent   { border-left-color:var(--gold); }
+.h-item.init  { border-left-color:var(--accent); }
+.h-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+.h-title { font-size:15px; font-weight:800; color:#111; }
+.h-date  { font-size:12px; color:#888888; margin-top:2px; text-transform:capitalize; }
+.h-badge { font-size:11px; font-weight:800; padding:3px 8px; border-radius:20px; background:#111; color:#fff; white-space:nowrap; }
+.h-badge.g { background:var(--green); }
+.h-badge.y { background:var(--gold); color:#fff; }
+.h-badge.b { background:var(--accent); color:#fff; }
+.h-row { display:flex; justify-content:space-between; font-size:14px; color:#444444; margin-top:4px; }
+.h-row strong { color:#111; font-weight:700; }
+.del-btn { background:none; border:none; color:#aaa; font-size:22px; cursor:pointer; padding:0 3px; line-height:1; }
+.edit-btn { background:none; border:none; color:#666; font-size:20px; cursor:pointer; padding:0 8px; line-height:1; font-weight:bold; }
+
+.s-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid #eee; }
+.s-row:last-child { border-bottom:none; }
+.s-lbl { font-size:15px; color:var(--sub); }
+.s-val { font-size:15px; font-weight:700; color:#111; }
+
+.data-line { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee; font-size:15px; }
+.data-line:last-child { border-bottom:none; }
+.data-lbl { color:var(--sub); }
+.data-val { font-weight:700; color:#111; }
+
+.empty { text-align:center; padding:50px 20px; color:var(--muted); font-size:15px; line-height:1.8; }
+.empty-ico { font-size:38px; margin-bottom:10px; }
+
+.toast {
+  position:fixed; bottom:106px; left:50%; transform:translateX(-50%) translateY(10px);
+  background:var(--green); color:#fff; font-size:14px; font-weight:700;
+  padding:10px 22px; border-radius:30px; opacity:0; pointer-events:none; z-index:10000;
+  transition:all .25s; white-space:nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.err { background:var(--alert); }
+
+.recur-select { display:inline-block; width:auto; padding:5px 10px; font-size:13px; border-radius:8px; margin-top:4px; }
+
+/* Styles pour l'écran de connexion */
+#login-screen {
+  position:fixed; top:0; left:0; right:0; bottom:0; z-index:99999;
+  background: var(--bg); display:flex; align-items:center; justify-content:center;
+  padding: 20px;
+}
+.login-card {
+  background: var(--card); border-radius: 16px; padding: 25px; width: 100%; max-width: 340px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1.5px solid #ddd; text-align: center;
+}
+</style>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqj5AjTvvwvQOMtjTPcKDEo3-MlvA5yb8",
+    authDomain: "consommation-bateau.firebaseapp.com",
+    projectId: "consommation-bateau",
+    storageBucket: "consommation-bateau.firebasestorage.app",
+    messagingSenderId: "613356091384",
+    appId: "1:613356091384:web:ed5c7436b446a8ed51080d",
+    measurementId: "G-JMZLN90GB7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Fonction de connexion exposée globalement
+  window.appLogin = () => {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    const errDiv = document.getElementById('login-error');
+    errDiv.textContent = 'Connexion en cours...';
+    errDiv.style.color = '#111';
+    
+    signInWithEmailAndPassword(auth, email, pass).catch(error => {
+        errDiv.style.color = 'var(--alert)';
+        errDiv.textContent = "Identifiants incorrects.";
+    });
+  };
+
+  // Fonction de déconnexion exposée globalement
+  window.appLogout = () => {
+    signOut(auth).then(() => {
+        window.location.reload();
+    });
+  };
+
+  // Sauvegarde Firebase exposée globalement
+  window.saveToCloud = (data) => {
+    setDoc(doc(db, "bateau", "donneesFamille"), data).catch(error => {
+        toast("Erreur de sauvegarde Cloud", "err");
+    });
+  };
+
+  // Ecoute de l'état de connexion en temps réel
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-wrapper').style.display = 'block';
+        
+        // Branchement à la base de données temps réel
+        onSnapshot(doc(db, "bateau", "donneesFamille"), (docSnap) => {
+            if (docSnap.exists()) {
+                window.S = docSnap.data();
+                // Sécurisation de la structure des données au cas où
+                window.S.frais = Object.assign({assurance:0,assuranceRec:'mois',port:0,portRec:'mois',charges:0,chargesRec:'mois',divers:0}, window.S.frais||{});
+                window.S.pret = Object.assign({total:0,mensualite:0,resteNb:0,dateRef:null}, window.S.pret||{});
+                window.S.cfg = Object.assign({idxRefG:null, idxRefD:null, initNiveau:null, initPrix:null, dateInit:null}, window.S.cfg||{});
+                window.S.stock = window.S.stock || [];
+                
+                try { recalculateHistory(); } catch(e) {}
+                if(window.updateUI) window.updateUI();
+            } else {
+                // Création initiale du document si la base est vide
+                window.saveToCloud(window.S);
+            }
+        });
+    } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('app-wrapper').style.display = 'none';
+    }
+  });
+</script>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+     <h2 style="margin-bottom:15px;font-size:22px;font-weight:900;letter-spacing:-1px;">⚓ Bateau</h2>
+     <p style="font-size:14px; color:var(--muted); margin-bottom: 20px;">Espace réservé à la famille</p>
+     <div class="field"><input type="email" id="login-email" placeholder="Adresse e-mail"/></div>
+     <div class="field" style="margin-bottom: 5px;"><input type="password" id="login-pass" placeholder="Mot de passe"/></div>
+     <div id="login-error" style="font-size:13px; font-weight:bold; margin-bottom:15px; min-height: 15px;"></div>
+     <button class="btn btn-p" onclick="appLogin()">Se connecter</button>
+  </div>
+</div>
+
+<div id="app-wrapper" style="display:none;">
+
+<div id="header">
+  <div class="app-name" onclick="goTab('bord', document.querySelector('#nav button'))">⚓ <span id="hdr-nom">Bateau</span></div>
+  <div class="jauge-mini" onclick="goTab('bord', document.querySelector('#nav button'))">
+    <div class="jauge-bar"><div class="jauge-fill" id="hdr-fill" style="width:0%"></div></div>
+    <span class="jauge-pct" id="hdr-pct">—</span>
+  </div>
+</div>
+
+<div id="main">
+
+  <div class="panel active" id="panel-bord">
+    <div class="card">
+      <div class="card-title">Réservoir</div>
+      <div class="jauge-litres-display" id="j-litres">— L</div>
+      <div class="jauge-track"><div class="jauge-inner" id="j-main" style="width:0%"></div></div>
+      <div class="jauge-labels"><span>0 L</span><span id="j-cap">—</span></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-val" id="d-auto">— milles</div><div class="stat-lbl">Autonomie estimée</div></div>
+      <div class="stat"><div class="stat-val" id="d-conso">— L</div><div class="stat-lbl">Conso moy./sortie</div></div>
+      <div class="stat"><div class="stat-val" id="d-nb">0</div><div class="stat-lbl">Sorties totales</div></div>
+      <div class="stat"><div class="stat-val" id="d-pleins">0</div><div class="stat-lbl">Pleins (30j)</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Dernière sortie</div>
+      <div id="last-content" style="color:var(--muted);font-size:15px;">Aucune sortie enregistrée</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⛽ Faire le plein</div>
+      <div class="field"><label>Date</label><input type="date" id="p-date"/></div>
+      <div class="field">
+        <label>Carburant</label>
+        <select id="p-type">
+          <option value="SP95" selected>SP95</option>
+          <option value="SP98">SP98</option>
+        </select>
+      </div>
+      
+      <div class="field" style="display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid #eee; border-bottom:1px solid #eee; margin-bottom:14px;">
+        <input type="checkbox" id="p-isfull" onchange="checkCapaFull(this)">
+        <label for="p-isfull" style="margin:0; font-size:15px; font-weight:700; cursor:pointer;">Plein complet (recalibrage du niveau d'essence)</label>
+      </div>
+
+      <div class="field"><label>Litres ajoutés <span class="req">*</span></label><input type="number" inputmode="decimal" id="p-litres" placeholder=""/></div>
+      <div class="field"><label>Prix au litre (€) <span class="req">*</span></label><input type="number" inputmode="decimal" step="0.01" id="p-prix" placeholder=""/></div>
+      <div class="field"><label>Lieu</label><input type="text" id="p-lieu" placeholder="Facultatif"/></div>
+      <div class="field"><label>Notes</label><textarea id="p-note" placeholder="Facultatif"></textarea></div>
+      <button class="btn btn-p" onclick="fairePlein()">Enregistrer le plein</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-sortie">
+    <h2 style="font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:14px;">Nouvelle sortie</h2>
+    <div class="card">
+      
+      <div class="field"><label>Lieu <span class="req">*</span></label><input type="text" id="s-lieu" placeholder="" oninput="resetCalc()"/></div>
+      <div class="field"><label>Date</label><input type="date" id="s-date" oninput="resetCalc()"/></div>
+
+      <div id="s-last-idx" style="font-size:14px; font-weight:700; color:var(--accent); background:#f0f8ff; padding:10px 12px; border-radius:10px; margin-bottom:14px; border:1px solid #cce5ff;">
+        Dernier index : Gauche 0 | Droit 0
+      </div>
+
+      <div class="field-row">
+        <div class="field"><label>Moteur Gauche : index arrivé <span class="req">*</span></label><input type="number" inputmode="decimal" id="i-fin-g" placeholder="" oninput="resetCalc()"/></div>
+        <div class="field"><label>Moteur Droit : index arrivé <span class="req">*</span></label><input type="number" inputmode="decimal" id="i-fin-d" placeholder="" oninput="resetCalc()"/></div>
+      </div>
+      
+      <div class="field"><label>Distance (milles)</label><input type="number" inputmode="decimal" id="s-dist" placeholder="Facultatif" oninput="resetCalc()"/></div>
+      <div class="field"><label>Notes</label><textarea id="s-note" placeholder="Facultatif" oninput="resetCalc()"></textarea></div>
+      
+      <button class="btn btn-s" id="btn-calc" onclick="calculer()">🔄 Calculer la sortie</button>
+    </div>
+    
+    <div id="calcul-box" style="display:none;"></div>
+    <button class="btn btn-g" id="btn-enreg" style="display:none;" onclick="enregistrerSortie()">✅ Valider et enregistrer</button>
+  </div>
+
+  <div class="panel" id="panel-journal">
+    <h2 style="font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:14px;">Journal de bord</h2>
+    <div id="journal-list"></div>
+  </div>
+
+  <div class="panel" id="panel-entretien">
+    <div class="card">
+      <div class="card-title">Nouvelle intervention / dépense</div>
+      <div class="field"><label>Date</label><input type="date" id="e-date"/></div>
+      <div class="field"><label>Type <span class="req">*</span></label><input type="text" id="e-type" placeholder=""/></div>
+      <div class="field"><label>Description</label><input type="text" id="e-desc" placeholder="Facultatif"/></div>
+      <div class="field"><label>Prestataire</label><input type="text" id="e-prest" placeholder="Facultatif"/></div>
+      <div class="field"><label>Coût (€) <span class="req">*</span></label><input type="number" inputmode="decimal" id="e-cout" placeholder=""/></div>
+      <div class="field"><label>Notes</label><textarea id="e-note" placeholder="Facultatif"></textarea></div>
+      <button class="btn btn-p" onclick="ajouterEntretien()">🔧 Enregistrer</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-reglages">
+
+    <div class="card">
+      <div class="card-title">Paramètres du bateau</div>
+      <div class="field"><label>Nom du bateau <span class="req">*</span></label><input type="text" id="cfg-nom" placeholder=""/></div>
+      <div class="field"><label>Capacité réservoir (L) <span class="req">*</span></label><input type="number" inputmode="decimal" id="cfg-capa" placeholder=""/></div>
+      <div class="field"><label>Type de bateau</label><input type="text" id="cfg-type" placeholder="Facultatif"/></div>
+      <div class="field"><label>Prix d'achat du bateau (€)</label><input type="number" inputmode="decimal" id="cfg-achat" placeholder="Facultatif"/></div>
+      <div class="field"><label>Consommation moyenne (L/h)</label><input type="number" inputmode="decimal" step="0.1" id="cfg-conso" placeholder="Facultatif"/></div>
+      <div class="field"><label>Vitesse moyenne (nœuds)</label><input type="number" inputmode="decimal" step="0.1" id="cfg-vit" placeholder="Facultatif"/></div>
+      <button class="btn btn-p" onclick="sauvegarderCfg()">💾 Sauvegarder les paramètres</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Niveau d'initialisation du réservoir</div>
+      <p style="font-size:12px; color:var(--alert); margin-bottom:10px; font-weight:bold;">Saisie obligatoire pour pouvoir calculer le coût de l'essence consommée.</p>
+      <div class="field"><label>Litres actuellement dans le réservoir <span class="req">*</span></label><input type="number" inputmode="decimal" id="cfg-niveau" placeholder=""/></div>
+      <div class="field"><label>Prix d'achat au litre (€) de ces litres <span class="req">*</span></label><input type="number" inputmode="decimal" step="0.01" id="cfg-niveau-prix" placeholder=""/></div>
+      <button class="btn btn-s" onclick="setNiveau()">🔄 Initialiser le niveau & prix</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Frais fixes du bateau</div>
+      <div class="field">
+        <label>Assurance (€)</label>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0"><input type="number" inputmode="decimal" id="cfg-assurance" placeholder="Facultatif"/></div>
+          <select class="field input recur-select" id="cfg-assurance-rec" style="width:auto;padding:12px 10px;font-size:15px;margin-bottom:0">
+            <option value="mois">/mois</option><option value="an">/an</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Place de port (€)</label>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0"><input type="number" inputmode="decimal" id="cfg-port" placeholder="Facultatif"/></div>
+          <select class="field input recur-select" id="cfg-port-rec" style="width:auto;padding:12px 10px;font-size:15px;margin-bottom:0">
+            <option value="mois">/mois</option><option value="an">/an</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Charges port (€)</label>
+        <div class="field-row">
+          <div class="field" style="margin-bottom:0"><input type="number" inputmode="decimal" id="cfg-charges" placeholder="Facultatif"/></div>
+          <select class="field input recur-select" id="cfg-charges-rec" style="width:auto;padding:12px 10px;font-size:15px;margin-bottom:0">
+            <option value="mois">/mois</option><option value="an">/an</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Frais divers récurrents (€/mois)</label><input type="number" inputmode="decimal" id="cfg-divers" placeholder="Facultatif"/></div>
+      <button class="btn btn-p" onclick="sauvegarderFrais()">💾 Sauvegarder les frais</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Prêt / crédit bateau</div>
+      <div class="field"><label>Montant emprunté (€)</label><input type="number" inputmode="decimal" id="cfg-pret-total" placeholder="Facultatif"/></div>
+      <div class="field"><label>Mensualité (€/mois)</label><input type="number" inputmode="decimal" id="cfg-pret-mensualite" placeholder="Facultatif"/></div>
+      <div class="field"><label>Nombre de mensualités restantes</label><input type="number" inputmode="decimal" id="cfg-pret-reste" placeholder="Facultatif"/></div>
+      <button class="btn btn-p" onclick="sauvegarderPret()">💾 Sauvegarder le prêt</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Synthèse des coûts</div>
+      <div id="synthese-content" style="font-size:14px;color:var(--muted);">Renseigne les frais fixes ci-dessus</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 Données globales</div>
+      <div id="donnees-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Index de référence (Moteurs)</div>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:10px;">Obligatoire : Point de départ avant ta toute première sortie sur l'app.</p>
+      <div class="field-row">
+        <div class="field"><label>Moteur Gauche <span class="req">*</span></label><input type="number" inputmode="decimal" id="cfg-idx-g" placeholder=""/></div>
+        <div class="field"><label>Moteur Droit <span class="req">*</span></label><input type="number" inputmode="decimal" id="cfg-idx-d" placeholder=""/></div>
+      </div>
+      <div id="cfg-idx-date" style="font-size:12px; color:var(--green); font-weight:bold; margin-bottom:10px; display:none;"></div>
+      <button class="btn btn-p" onclick="sauvegarderIdx()">💾 Sauvegarder les index</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Outils & Sécurité</div>
+      <button class="btn btn-s" onclick="exportData()">⬇️ Sauvegarder une copie JSON</button>
+      <button class="btn btn-s" onclick="importData()">⬆️ Importer une sauvegarde JSON</button>
+      <button class="btn btn-d" onclick="resetData()" style="margin-top: 15px;">🗑️ Tout effacer (Cloud inclus)</button>
+      <button class="btn btn-d" onclick="appLogout()" style="background:#111; color:white; border:none; margin-top: 15px;">🚪 Se déconnecter</button>
+    </div>
+
+    <p style="font-size:12px;color:var(--muted);text-align:center;padding:4px 10px 20px;line-height:1.7;">
+      Safari → Partager → <strong style="color:#111;">"Sur l'écran d'accueil"</strong>
+    </p>
+  </div>
+
+</div>
+
+<div id="modal-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;padding:20px;align-items:center;justify-content:center;">
+  <div class="card" style="width:100%;max-width:400px;margin:0;max-height:90vh;overflow-y:auto;">
+    <div class="card-title" id="me-title" style="font-size:14px;color:#111;">Modifier l'entrée</div>
+    <div id="me-fields"></div>
+    <div style="display:flex;gap:10px;margin-top:15px;">
+       <button class="btn btn-s" style="margin:0;" onclick="closeEdit()">Annuler</button>
+       <button class="btn btn-p" style="margin:0;" onclick="saveEdit()">✅ Recalculer & Valider</button>
+    </div>
+  </div>
+</div>
+
+<div id="nav">
+  <button class="active" onclick="goTab('bord',this)"><span class="ico">🧭</span>Bord</button>
+  <button onclick="goTab('sortie',this)"><span class="ico">⛵</span>Sortie</button>
+  <button onclick="goTab('journal',this)"><span class="ico">📋</span>Journal</button>
+  <button onclick="goTab('entretien',this)"><span class="ico">🔧</span>Entretien</button>
+  <button onclick="goTab('reglages',this)"><span class="ico">⚙️</span>Réglages</button>
+</div>
+
+</div> <div class="toast" id="toast"></div>
+
+<script>
+// La base de données globale
+var S = {
+  cfg:{nom:'',type:'',achat:0,capa:0,conso:0,vit:0, idxRefG:null, idxRefD:null, initNiveau:null, initPrix:null, dateInit:null},
+  frais:{assurance:0,assuranceRec:'mois',port:0,portRec:'mois',charges:0,chargesRec:'mois',divers:0},
+  pret:{total:0,mensualite:0,resteNb:0,dateRef:null},
+  niveau:0, sorties:[], pleins:[], entretiens:[], stock:[]
+};
+
+// Fonction de mise à jour appelée automatiquement par le Cloud à chaque changement
+window.updateUI = function() {
+  const activePanel = document.querySelector('.panel.active');
+  if(activePanel.id === 'panel-bord') renderBord();
+  if(activePanel.id === 'panel-journal') renderJournal();
+  if(activePanel.id === 'panel-reglages') { loadCfg(); renderSynthese(); renderDonnees(); }
+  if(activePanel.id === 'panel-sortie') {
+      const last = getLastIndexes();
+      document.getElementById('s-last-idx').textContent = `Dernier index : Gauche ${last.g} | Droit ${last.d}`;
+  }
+}
+
+// Remplacement de la sauvegarde locale par la sauvegarde Cloud
+function save(){ 
+    if(window.saveToCloud) {
+        window.saveToCloud(S);
+    }
+}
+
+// Formateur de nombres : ajoute un espace pour les milliers, préserve les décimales
+function fN(n, dec=0) {
+  if(n==null || isNaN(n)) return '';
+  let parts = Number(n).toFixed(dec).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return parts.join(',');
+}
+
+function tsNow(){
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+function today(){ return tsNow().slice(0,10); }
+
+function fmtDateJour(ts){
+  if(!ts) return '';
+  const dStr = ts.slice(0,10);
+  try {
+     const dateObj = new Date(dStr);
+     if(isNaN(dateObj)) return fmtDate(dStr);
+     const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+     const d = days[dateObj.getDay()];
+     return d + ' ' + fmtDate(dStr);
+  } catch(e) { return fmtDate(dStr); }
+}
+
+function fmtDate(ts){
+  if(!ts) return '';
+  const d=ts.slice(0,10);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d)){ const [y,m,j]=d.split('-'); return j+'/'+m+'/'+y; }
+  return d;
+}
+
+function tsSort(a,b){ const ta=a._ts||'', tb=b._ts||''; return tb>ta?1:tb<ta?-1:0; }
+
+function getLastIndexes() {
+  const lastSortie = S.sorties[S.sorties.length - 1];
+  return {
+    g: Number(lastSortie && lastSortie.idxApG != null ? lastSortie.idxApG : (S.cfg.idxRefG || 0)),
+    d: Number(lastSortie && lastSortie.idxApD != null ? lastSortie.idxApD : (S.cfg.idxRefD || 0))
+  };
+}
+
+function getRestePret() {
+  const p = S.pret;
+  if (!p.resteNb || !p.dateRef) return p.resteNb || 0;
+  const dRef = new Date(p.dateRef);
+  const dNow = new Date();
+  let m = (dNow.getFullYear() - dRef.getFullYear()) * 12 + (dNow.getMonth() - dRef.getMonth());
+  if (dNow.getDate() < dRef.getDate()) m--;
+  return Math.max(0, p.resteNb - Math.max(0, m));
+}
+
+function resetCalc() {
+  if (document.getElementById('btn-enreg').style.display !== 'none') {
+    document.getElementById('btn-enreg').style.display = 'none';
+    document.getElementById('btn-calc').style.display = 'block';
+    document.getElementById('calcul-box').style.display = 'none';
+    _calc = null;
+  }
+}
+
+function checkCapaFull(cb) {
+  if (cb.checked && (!S.cfg.capa || S.cfg.capa <= 0)) {
+    toast("Attention : Capacité du réservoir non définie dans les Réglages", "err");
+    cb.checked = false;
+  }
+}
+
+function recalculateHistory(throwOnError = false) {
+  let tempStock = [];
+  if (S.cfg.initNiveau != null && S.cfg.initPrix != null) {
+      tempStock.push({l: Number(S.cfg.initNiveau), p: Number(S.cfg.initPrix)});
+  }
+  let currentNiveau = Number(S.cfg.initNiveau || 0);
+  let lastG = Number(S.cfg.idxRefG || 0);
+  let lastD = Number(S.cfg.idxRefD || 0);
+
+  const all = [
+      ...S.pleins.map(p => ({...p, _t:'p'})),
+      ...S.sorties.map(s => ({...s, _t:'s'}))
+  ].sort((a,b)=>(a._ts||'').localeCompare(b._ts||''));
+
+  for(let j=0; j<all.length; j++) {
+      let item = all[j];
+      
+      if (item._t === 'p') {
+          item.niveauAvant = currentNiveau;
+          let addL = Number(item.litres);
+          
+          if(item.isFull && S.cfg.capa > 0) {
+              if(throwOnError && addL > S.cfg.capa) {
+                  throw new Error(`Erreur : Les litres ajoutés dépassent la capacité totale (${fN(S.cfg.capa,1)} L)`);
+              }
+              currentNiveau = S.cfg.capa;
+          } else {
+              if(S.cfg.capa > 0 && currentNiveau + addL > S.cfg.capa + 0.1) {
+                  if(throwOnError) throw new Error(`Le plein du ${fmtDate(item.date)} dépasse la capacité max (${fN(S.cfg.capa,1)} L)`);
+              }
+              currentNiveau += addL;
+              if (S.cfg.capa > 0) currentNiveau = Math.min(currentNiveau, S.cfg.capa);
+          }
+          
+          item.niveauApres = currentNiveau;
+          item.total = +(item.litres * item.prix).toFixed(2);
+          tempStock.push({l: item.litres, p: item.prix});
+          
+          let currentStockSum = tempStock.reduce((acc, b) => acc + b.l, 0);
+          if (currentStockSum > currentNiveau) {
+              let excess = currentStockSum - currentNiveau;
+              for(let i = 0; i < tempStock.length; i++) {
+                  if (excess <= 0.001) break;
+                  let remove = Math.min(tempStock[i].l, excess);
+                  tempStock[i].l -= remove;
+                  excess -= remove;
+              }
+              tempStock = tempStock.filter(b => b.l > 0.001);
+          }
+          
+      } else if (item._t === 's') {
+          item.niveauAvant = currentNiveau;
+          
+          if(Number(item.idxApG) < lastG) {
+              if(throwOnError) throw new Error(`Erreur : L'index Moteur Gauche du ${fmtDate(item.date)} est inférieur au précédent`);
+          }
+          if(Number(item.idxApD) < lastD) {
+              if(throwOnError) throw new Error(`Erreur : L'index Moteur Droit du ${fmtDate(item.date)} est inférieur au précédent`);
+          }
+          
+          let consoG = Math.max(0, Number(item.idxApG) - lastG);
+          let consoD = Math.max(0, Number(item.idxApD) - lastD);
+          item.consoL = consoG + consoD;
+          
+          if(currentNiveau - item.consoL < -0.1) {
+              if(throwOnError) throw new Error(`Consommation incohérente (> Reste réservoir) le ${fmtDate(item.date)}`);
+          }
+
+          let consoToCalc = item.consoL;
+          let coutCalc = 0;
+          for(let i = tempStock.length - 1; i >= 0; i--) {
+              if(consoToCalc <= 0) break;
+              let batch = tempStock[i];
+              let consumed = Math.min(batch.l, consoToCalc);
+              coutCalc += consumed * batch.p;
+              consoToCalc -= consumed;
+              batch.l -= consumed;
+          }
+          if(consoToCalc > 0) {
+              let fallback = S.cfg.initPrix || 0;
+              coutCalc += consoToCalc * fallback;
+          }
+          item.cout = coutCalc;
+          
+          currentNiveau = Math.max(0, currentNiveau - item.consoL);
+          item.niveauAp = currentNiveau;
+          
+          lastG = Number(item.idxApG);
+          lastD = Number(item.idxApD);
+          
+          tempStock = tempStock.filter(b => b.l > 0.001);
+      }
+  }
+
+  S.stock = tempStock;
+  S.pleins = all.filter(x => x._t === 'p').map(x => { delete x._t; return x; });
+  S.sorties = all.filter(x => x._t === 's').map(x => { delete x._t; return x; });
+  S.niveau = currentNiveau;
+}
+
+function goTab(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active'); window.scrollTo(0,0);
+  if(name==='bord') renderBord();
+  if(name==='journal') renderJournal();
+  if(name==='reglages'){ loadCfg(); renderSynthese(); renderDonnees(); }
+  if(name==='sortie'){
+    document.getElementById('s-date').value=today();
+    const last = getLastIndexes();
+    document.getElementById('s-last-idx').textContent = `Dernier index : Gauche ${last.g} | Droit ${last.d}`;
+    resetCalc();
+  }
+}
+
+function renderBord(){
+  document.getElementById('hdr-nom').textContent=S.cfg.nom?S.cfg.nom+(S.cfg.type?' · '+S.cfg.type:''):'Bateau';
+  const pct=S.cfg.capa?Math.min(100,Math.round(S.niveau/S.cfg.capa*100)):0;
+  const col=pct<=20?'var(--alert)':pct<=35?'var(--gold)':'#111';
+  document.getElementById('j-litres').textContent=fN(S.niveau, 0)+' L';
+  document.getElementById('j-litres').style.color=col;
+  document.getElementById('j-main').style.width=pct+'%';
+  document.getElementById('j-main').style.background=col;
+  document.getElementById('j-cap').textContent=(S.cfg.capa?fN(S.cfg.capa,0):'—')+' L';
+  document.getElementById('hdr-fill').style.width=pct+'%';
+  document.getElementById('hdr-fill').style.background=col;
+  document.getElementById('hdr-pct').textContent=S.cfg.capa?pct+'%':'—';
+  
+  const auto=calcAuto(S.niveau);
+  const aEl=document.getElementById('d-auto');
+  aEl.textContent=auto?fN(auto,1)+' milles':'— milles';
+  aEl.className='stat-val'+(auto&&parseFloat(auto)<10?' danger':auto&&parseFloat(auto)<20?' warn':'');
+  document.getElementById('d-conso').textContent=(consoMoy()?fN(consoMoy(),1):'—')+' L';
+  document.getElementById('d-nb').textContent=fN(S.sorties.length,0);
+  
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const tdaStr = thirtyDaysAgo.toISOString().slice(0,10);
+  const pleinsMois = S.pleins.filter(p => p.date >= tdaStr).length;
+  document.getElementById('d-pleins').textContent = fN(pleinsMois, 0);
+  
+  const last=S.sorties[S.sorties.length-1];
+  const lc=document.getElementById('last-content');
+  if(last){
+    lc.style.color='';
+    lc.innerHTML=
+      `<div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-weight:800;font-size:14px;">${h(last.lieu||'Sortie')}</span>
+        <span style="color:var(--muted);font-size:13px;text-transform:capitalize;">${fmtDateJour(last._ts||last.date)}</span>
+      </div>`+
+      (last.consoL!=null?`<div class="s-row"><span class="s-lbl">Consommé</span><span class="s-val">${fN(last.consoL,1)} L</span></div>`:'')+
+      (last.cout?`<div class="s-row"><span class="s-lbl">Coût essence</span><span class="s-val">${fN(last.cout,2)} €</span></div>`:'');
+  } else { lc.style.color='var(--muted)'; lc.textContent='Aucune sortie enregistrée'; }
+}
+
+function fairePlein(){
+  const l=parseFloat(document.getElementById('p-litres').value);
+  const p=parseFloat(document.getElementById('p-prix').value);
+  const tCarb=document.getElementById('p-type').value;
+  const tLieu=document.getElementById('p-lieu').value;
+  const tNote=document.getElementById('p-note').value;
+  const dateVal=document.getElementById('p-date').value||today();
+  const isF = document.getElementById('p-isfull').checked;
+  
+  if(isNaN(l) || isNaN(p)){ toast('Litres et Prix sont obligatoires','err'); return; }
+  if(l <= 0 || p < 0) { toast('Valeurs négatives interdites', 'err'); return; }
+  
+  if (!isF && S.cfg.capa > 0) {
+    const maxAdd = S.cfg.capa - S.niveau;
+    if (l > maxAdd + 0.1) {
+      toast(`Impossible : le réservoir n'a que ${fN(maxAdd,1)} L de libre`, 'err');
+      return;
+    }
+  }
+  
+  const heure=tsNow().slice(10);
+  const ts=dateVal+heure;
+  
+  S.pleins.push({ _ts:ts, date:dateVal, typeCarb:tCarb, lieu:tLieu, note:tNote, litres:l, prix:p, isFull:isF });
+  
+  try { recalculateHistory(true); } 
+  catch(e) { S.pleins.pop(); toast(e.message, 'err'); return; }
+
+  save(); 
+  ['p-litres','p-prix','p-lieu','p-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-date').value=today();
+  document.getElementById('p-isfull').checked = false;
+  toast('Plein enregistré ✓');
+}
+
+let _calc=null;
+function calculer(){
+  const last = getLastIndexes();
+  const fg = Number(parseFloat(document.getElementById('i-fin-g').value));
+  const fd = Number(parseFloat(document.getElementById('i-fin-d').value));
+  const lieu = document.getElementById('s-lieu').value.trim();
+
+  if (!lieu) { toast('Le lieu est obligatoire', 'err'); return; }
+  if (isNaN(fg)) { toast('L\'index Moteur Gauche est requis', 'err'); return; }
+  if (isNaN(fd)) { toast('L\'index Moteur Droit est requis', 'err'); return; }
+  
+  if(fg < 0 || fd < 0) { toast('Les index ne peuvent pas être négatifs', 'err'); return; }
+  if(fg < last.g) { toast('Index Moteur Gauche invalide (< précédent)', 'err'); return; }
+  if(fd < last.d) { toast('Index Moteur Droit invalide (< précédent)', 'err'); return; }
+  
+  if(S.cfg.initNiveau == null || S.cfg.initPrix == null) {
+      toast('Erreur: Niveau initial non renseigné dans les réglages', 'err');
+      return;
+  }
+  
+  const consoG = fg - last.g;
+  const consoD = fd - last.d;
+  const consoL = consoG + consoD;
+  
+  if (consoL > S.niveau + 0.1) {
+     toast(`Consommation incohérente (> Reste réservoir)`, 'err');
+     return;
+  }
+  if (S.cfg.capa > 0 && consoL > S.cfg.capa + 0.1) {
+     toast(`Consommation incohérente (> Capacité max)`, 'err');
+     return;
+  }
+
+  const nvNiveau = Math.max(0, S.niveau - consoL);
+  
+  let consoToCalc = consoL;
+  let coutCalc = 0;
+  let tempStock = JSON.parse(JSON.stringify(S.stock || []));
+
+  for(let i = tempStock.length - 1; i >= 0; i--) {
+      if(consoToCalc <= 0) break;
+      let batch = tempStock[i];
+      let consumed = Math.min(batch.l, consoToCalc);
+      coutCalc += consumed * batch.p;
+      consoToCalc -= consumed;
+      batch.l -= consumed;
+  }
+
+  if(consoToCalc > 0) {
+      let fallback = S.pleins.length > 0 ? S.pleins[S.pleins.length-1].prix : S.cfg.initPrix;
+      coutCalc += consoToCalc * fallback;
+  }
+
+  const auto = calcAuto(nvNiveau);
+  _calc = { consoL, nvNiveau, cout: coutCalc, auto, fg, fd };
+  
+  const pct = S.cfg.capa ? Math.min(100, Math.round(nvNiveau/S.cfg.capa*100)) : null;
+  const col = pct!=null ? (pct<=20?'var(--alert)':pct<=35?'var(--gold)':'var(--green)') : '#111';
+  
+  const box = document.getElementById('calcul-box');
+  box.style.display = 'block';
+  box.innerHTML =
+    `<div class="result-box">
+      <div class="r-row"><span class="r-lbl">Consommé</span><span class="r-val">${fN(consoL,1)} L</span></div>
+      <div class="r-row"><span class="r-lbl">Reste réservoir</span><span class="r-val" style="color:${col}">${fN(nvNiveau,0)} L${pct!=null?' ('+pct+'%)':''}</span></div>
+      ${auto?`<div class="r-row"><span class="r-lbl">Autonomie restante</span><span class="r-val">${fN(auto,1)} milles</span></div>`:''}
+      <div class="r-row"><span class="r-lbl">Coût essence</span><span class="r-val">${fN(coutCalc,2)} €</span></div>
+    </div>`;
+    
+  document.getElementById('btn-calc').style.display = 'none';
+  document.getElementById('btn-enreg').style.display = 'block';
+  
+  setTimeout(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }, 100);
+}
+
+function enregistrerSortie(){
+  if(!_calc){ toast('Calculez la sortie avant de valider','err'); return; }
+  const dateVal=document.getElementById('s-date').value||today();
+  const heure=tsNow().slice(10);
+  
+  let dDist = parseFloat(document.getElementById('s-dist').value);
+  if(!isNaN(dDist) && dDist < 0) { toast('La distance ne peut pas être négative', 'err'); return; }
+
+  S.sorties.push({
+    _ts: dateVal+heure, date:dateVal,
+    lieu:document.getElementById('s-lieu').value,
+    dist:isNaN(dDist)?0:dDist,
+    note:document.getElementById('s-note').value,
+    idxApG:_calc.fg, idxApD:_calc.fd
+  });
+  
+  try { recalculateHistory(true); } 
+  catch(e) { S.sorties.pop(); toast(e.message, 'err'); return; }
+  
+  save(); _calc=null;
+  
+  ['i-fin-g','i-fin-d','s-lieu','s-dist','s-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('calcul-box').style.display='none';
+  document.getElementById('btn-enreg').style.display='none';
+  document.getElementById('btn-calc').style.display='block';
+  
+  const last = getLastIndexes();
+  document.getElementById('s-last-idx').textContent = `Dernier index : Gauche ${last.g} | Droit ${last.d}`;
+  
+  toast('Sortie enregistrée ✓');
+}
+
+function renderJournal(){
+  const el=document.getElementById('journal-list');
+  const sortedPleins = [...S.pleins].sort((a,b)=>b._ts.localeCompare(a._ts));
+  const lastPleinTs = sortedPleins.length > 0 ? sortedPleins[0]._ts : null;
+
+  const all=[
+    ...S.sorties.map((s,i)=>({...s,_t:'s',_i:i,_ts:s._ts||s.date||''})),
+    ...S.pleins.map((p,i)=>({...p,_t:'p',_i:i,_ts:p._ts||p.date||''})),
+    ...S.entretiens.map((e,i)=>({...e,_t:'e',_i:i,_ts:e._ts||e.date||''}))
+  ];
+  if(S.cfg.dateInit) {
+    all.push({ _t:'i', _ts: S.cfg.dateInit, date: S.cfg.dateInit.slice(0,10) });
+  }
+  all.sort(tsSort);
+  
+  if(!all.length){ el.innerHTML=`<div class="empty"><div class="empty-ico">📋</div>Aucun événement</div>`; return; }
+  
+  el.innerHTML=all.map(item=>{
+    const isLocked = lastPleinTs && (item._ts < lastPleinTs);
+
+    if(item._t==='s'){
+      const si=item._i;
+      const titleDetail = item.lieu;
+      return `<div class="h-item">
+        <div class="h-head">
+          <div><div class="h-title">Sortie${titleDetail ? ' : ' + h(titleDetail) : ''}</div><div class="h-date" style="text-transform:capitalize;">${fmtDateJour(item._ts||item.date)}</div></div>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span class="h-badge">⛵</span>
+            ${!isLocked ? `
+              <button class="edit-btn" onclick="openEdit('s',${si})">⋮</button>
+              <button class="del-btn" data-t="s" data-i="${si}" onclick="delItem(this)">×</button>
+            ` : ``}
+          </div>
+        </div>
+        ${item.dist?`<div class="h-row"><span>Distance</span><strong>${fN(item.dist,1)} milles</strong></div>`:''}
+        ${item.consoL!=null?`<div class="h-row"><span>Consommé</span><strong>${fN(item.consoL,1)} L</strong></div>`:''}
+        ${item.cout?`<div class="h-row"><span>Coût</span><strong>${fN(item.cout,2)} €</strong></div>`:''}
+        <div class="h-row"><span>Index</span><strong>G: ${item.idxApG||0} | D: ${item.idxApD||0}</strong></div>
+        ${item.note?`<div class="h-row"><span>Notes</span><strong>${h(item.note)}</strong></div>`:''}
+      </div>`;
+    }
+    if(item._t==='p'){
+      const pi=item._i;
+      const titlePrefix = item.isFull ? '✅ Plein recalibré' : 'Plein';
+      return `<div class="h-item plein">
+        <div class="h-head">
+          <div><div class="h-title">${titlePrefix} ${item.typeCarb||'SP95'}</div><div class="h-date" style="text-transform:capitalize;">${fmtDateJour(item._ts||item.date)}</div></div>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span class="h-badge g">⛽</span>
+            ${!isLocked ? `
+              <button class="edit-btn" onclick="openEdit('p',${pi})">⋮</button>
+              <button class="del-btn" data-t="p" data-i="${pi}" onclick="delItem(this)">×</button>
+            ` : ``}
+          </div>
+        </div>
+        <div class="h-row"><span>Litres ajoutés</span><strong>${fN(item.litres,1)} L</strong></div>
+        ${item.prix?`<div class="h-row"><span>Prix/L</span><strong>${fN(item.prix,2)} €</strong></div>`:''}
+        ${item.total?`<div class="h-row"><span>Total payé</span><strong>${fN(item.total,2)} €</strong></div>`:''}
+        ${item.lieu?`<div class="h-row"><span>Lieu</span><strong>${h(item.lieu)}</strong></div>`:''}
+        ${item.note?`<div class="h-row"><span>Notes</span><strong>${h(item.note)}</strong></div>`:''}
+      </div>`;
+    }
+    if(item._t==='e'){
+      const ei=item._i;
+      return `<div class="h-item ent">
+        <div class="h-head">
+          <div><div class="h-title">Entretien : ${h(item.type)}</div><div class="h-date" style="text-transform:capitalize;">${fmtDateJour(item._ts||item.date)}</div></div>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <span class="h-badge y">🔧</span>
+            ${!isLocked ? `
+              <button class="edit-btn" onclick="openEdit('e',${ei})">⋮</button>
+              <button class="del-btn" data-t="e" data-i="${ei}" onclick="delItem(this)">×</button>
+            ` : ``}
+          </div>
+        </div>
+        ${item.desc?`<div class="h-row"><span>Détail</span><strong>${h(item.desc)}</strong></div>`:''}
+        ${item.prest?`<div class="h-row"><span>Prestataire</span><strong>${h(item.prest)}</strong></div>`:''}
+        ${item.cout!=null?`<div class="h-row"><span>Coût</span><strong>${fN(item.cout,2)} €</strong></div>`:''}
+        ${item.note?`<div class="h-row"><span>Notes</span><strong>${h(item.note)}</strong></div>`:''}
+      </div>`;
+    }
+    if(item._t==='i'){
+      return `<div class="h-item init">
+        <div class="h-head">
+          <div><div class="h-title">Début d'utilisation de l'app</div><div class="h-date" style="text-transform:capitalize;">${fmtDateJour(item._ts)}</div></div>
+          <div style="display:flex;gap:5px;align-items:center;"><span class="h-badge b">🚩</span></div>
+        </div>
+        <div class="h-row"><span>Index initiaux</span><strong>G: ${S.cfg.idxRefG} | D: ${S.cfg.idxRefD}</strong></div>
+      </div>`;
+    }
+    return '';
+  }).join('');
+}
+
+let _editTarget = null;
+function openEdit(t, i) {
+  _editTarget = {t, i};
+  const item = S[t==='s'?'sorties':t==='p'?'pleins':'entretiens'][i];
+  const f = document.getElementById('me-fields');
+  let dVal = item.date || item._ts.slice(0,10);
+  let html = '';
+  
+  if(t==='s') {
+    document.getElementById('me-title').textContent = 'Modifier Sortie';
+    html += `<div class="field"><label>Lieu <span class="req">*</span></label><input type="text" id="me-lieu" value="${item.lieu||''}"/></div>`;
+    html += `<div class="field"><label>Date</label><input type="date" id="me-date" value="${dVal}"/></div>`;
+    html += `<div class="field"><label>Moteur Gauche : index arrivé <span class="req">*</span></label><input type="number" inputmode="decimal" id="me-idx-g" value="${item.idxApG||''}"/></div>`;
+    html += `<div class="field"><label>Moteur Droit : index arrivé <span class="req">*</span></label><input type="number" inputmode="decimal" id="me-idx-d" value="${item.idxApD||''}"/></div>`;
+    html += `<div class="field"><label>Distance (milles)</label><input type="number" inputmode="decimal" id="me-dist" value="${item.dist||''}"/></div>`;
+    html += `<div class="field"><label>Notes</label><textarea id="me-note">${item.note||''}</textarea></div>`;
+  } else if(t==='p') {
+    document.getElementById('me-title').textContent = 'Modifier Plein';
+    html += `<div class="field"><label>Date</label><input type="date" id="me-date" value="${dVal}"/></div>`;
+    html += `<div class="field"><label>Carburant</label><select id="me-typecarb"><option value="SP95" ${item.typeCarb==='SP95'?'selected':''}>SP95</option><option value="SP98" ${item.typeCarb==='SP98'?'selected':''}>SP98</option></select></div>`;
+    html += `<div class="field" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:14px;"><input type="checkbox" id="me-isfull" ${item.isFull?'checked':''}><label for="me-isfull" style="margin:0;font-weight:700;cursor:pointer;">Plein complet (recalibrage du niveau d'essence)</label></div>`;
+    html += `<div class="field"><label>Litres ajoutés</label><input type="number" inputmode="decimal" id="me-litres" value="${item.litres||''}"/></div>`;
+    html += `<div class="field"><label>Prix au litre (€)</label><input type="number" inputmode="decimal" step="0.01" id="me-prix" value="${item.prix||''}"/></div>`;
+    html += `<div class="field"><label>Lieu</label><input type="text" id="me-lieu" value="${item.lieu||''}"/></div>`;
+    html += `<div class="field"><label>Notes</label><textarea id="me-note">${item.note||''}</textarea></div>`;
+  } else if(t==='e') {
+    document.getElementById('me-title').textContent = 'Modifier Entretien';
+    html += `<div class="field"><label>Date</label><input type="date" id="me-date" value="${dVal}"/></div>`;
+    html += `<div class="field"><label>Type</label><input type="text" id="me-type" value="${item.type||''}"/></div>`;
+    html += `<div class="field"><label>Description</label><input type="text" id="me-desc" value="${item.desc||''}"/></div>`;
+    html += `<div class="field"><label>Prestataire</label><input type="text" id="me-prest" value="${item.prest||''}"/></div>`;
+    html += `<div class="field"><label>Coût (€)</label><input type="number" inputmode="decimal" id="me-cout" value="${item.cout||''}"/></div>`;
+    html += `<div class="field"><label>Notes</label><textarea id="me-note">${item.note||''}</textarea></div>`;
+  }
+  
+  f.innerHTML = html;
+  document.getElementById('modal-edit').style.display='flex';
+}
+
+function saveEdit() {
+  if(!_editTarget) return;
+  const {t, i} = _editTarget;
+  
+  const backupS = JSON.stringify(S);
+  const item = S[t==='s'?'sorties':t==='p'?'pleins':'entretiens'][i];
+  
+  let newDate = document.getElementById('me-date').value;
+  if(newDate) {
+    item.date = newDate;
+    item._ts = newDate + item._ts.slice(10);
+  }
+
+  try {
+      if(t==='s') {
+        let nG = Number(parseFloat(document.getElementById('me-idx-g').value));
+        let nD = Number(parseFloat(document.getElementById('me-idx-d').value));
+        let nDist = parseFloat(document.getElementById('me-dist').value);
+        let lieuVal = document.getElementById('me-lieu').value.trim();
+        
+        if(!lieuVal) throw new Error("Le lieu est obligatoire");
+        if(isNaN(nG)||isNaN(nD)) throw new Error("Les index sont obligatoires");
+        if(nG < 0 || nD < 0) throw new Error("Les index ne peuvent pas être négatifs");
+        if(!isNaN(nDist) && nDist < 0) throw new Error("La distance ne peut pas être négative");
+        
+        item.idxApG = nG;
+        item.idxApD = nD;
+        item.lieu = lieuVal;
+        item.dist = isNaN(nDist)?0:nDist;
+        item.note = document.getElementById('me-note').value;
+      } else if(t==='p') {
+        let nL = parseFloat(document.getElementById('me-litres').value);
+        let nP = parseFloat(document.getElementById('me-prix').value);
+        if(isNaN(nL)||isNaN(nP)) throw new Error("Litres et Prix obligatoires");
+        if(nL <= 0 || nP < 0) throw new Error("Valeurs négatives interdites");
+
+        item.typeCarb = document.getElementById('me-typecarb').value;
+        item.isFull = document.getElementById('me-isfull').checked;
+        item.lieu = document.getElementById('me-lieu').value;
+        item.litres = nL;
+        item.prix = nP;
+        item.note = document.getElementById('me-note').value;
+      } else if(t==='e') {
+        let nC = parseFloat(document.getElementById('me-cout').value);
+        if(isNaN(nC)) throw new Error("Le coût est obligatoire");
+        if(nC < 0) throw new Error("Le coût ne peut pas être négatif");
+        let typeVal = document.getElementById('me-type').value.trim();
+        if(!typeVal) throw new Error("Le type est obligatoire");
+
+        item.type = typeVal;
+        item.desc = document.getElementById('me-desc').value;
+        item.prest = document.getElementById('me-prest').value;
+        item.note = document.getElementById('me-note').value;
+        item.cout = nC;
+      }
+      
+      recalculateHistory(true); 
+  } catch(e) {
+      S = JSON.parse(backupS);
+      toast(e.message, 'err');
+      return;
+  }
+  
+  save(); 
+  document.getElementById('modal-edit').style.display='none';
+  _editTarget = null;
+  toast('Recalcul et modification terminés ✓');
+}
+
+function closeEdit() {
+  document.getElementById('modal-edit').style.display='none';
+  _editTarget = null;
+}
+
+function delItem(btn){
+  const t=btn.getAttribute('data-t'), i=parseInt(btn.getAttribute('data-i'));
+  const row=btn.parentElement;
+  row.innerHTML=
+    `<span style="font-size:12px;color:var(--alert);margin-right:4px;">Supprimer ?</span>`+
+    `<button class="del-btn" style="color:var(--alert);font-size:12px;font-weight:800;padding:2px 8px;border:1.5px solid var(--alert);border-radius:7px;" onclick="confirmDel('${t}',${i})">Oui</button>`+
+    `<button class="del-btn" style="font-size:12px;padding:2px 8px;border:1.5px solid #bbb;border-radius:7px;margin-left:4px;" onclick="renderJournal()">Non</button>`;
+}
+function confirmDel(t,i){
+  if(t==='s'){
+    if(i<0||i>=S.sorties.length) return;
+    const backupS = JSON.stringify(S);
+    S.sorties.splice(i,1);
+    try { recalculateHistory(true); } 
+    catch(e) { S = JSON.parse(backupS); toast('Impossible : crée une incohérence', 'err'); return; }
+    toast('Sortie supprimée et recalculée', 'err');
+  } else if(t==='p'){
+    if(i<0||i>=S.pleins.length) return;
+    const backupS = JSON.stringify(S);
+    S.pleins.splice(i,1); 
+    try { recalculateHistory(true); } 
+    catch(e) { S = JSON.parse(backupS); toast('Impossible de supprimer ce plein (manque d\'essence)', 'err'); return; }
+    toast('Plein supprimé et recalculé', 'err');
+  } else if(t==='e'){
+    if(i<0||i>=S.entretiens.length) return;
+    S.entretiens.splice(i,1); toast('Entretien supprimé', 'err');
+  }
+  save(); 
+}
+
+function ajouterEntretien(){
+  const type=document.getElementById('e-type').value.trim();
+  const cout=parseFloat(document.getElementById('e-cout').value);
+  if(!type || isNaN(cout)){ toast('Type et Coût sont obligatoires','err'); return; }
+  if(cout < 0) { toast('Le coût ne peut pas être négatif', 'err'); return; }
+  
+  const dateVal=document.getElementById('e-date').value||today();
+  const heure=tsNow().slice(10);
+  S.entretiens.push({
+    _ts:dateVal+heure, date:dateVal, type,
+    desc: document.getElementById('e-desc').value,
+    prest:document.getElementById('e-prest').value,
+    cout: cout,
+    note: document.getElementById('e-note').value
+  });
+  save(); 
+  ['e-type','e-desc','e-note','e-cout','e-prest'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('e-date').value=today();
+  toast('Entretien enregistré ✓');
+}
+
+function loadCfg(){
+  const f=S.frais, p=S.pret, c=S.cfg;
+  document.getElementById('cfg-idx-g').value=c.idxRefG!==null?c.idxRefG:'';
+  document.getElementById('cfg-idx-d').value=c.idxRefD!==null?c.idxRefD:'';
+  
+  if(c.dateInit) {
+    const el = document.getElementById('cfg-idx-date');
+    el.style.display = 'block';
+    el.textContent = 'Enregistré le : ' + fmtDate(c.dateInit);
+  }
+  
+  document.getElementById('cfg-niveau').value=c.initNiveau!==null?c.initNiveau:'';
+  document.getElementById('cfg-niveau-prix').value=c.initPrix!==null?c.initPrix:'';
+  
+  document.getElementById('cfg-nom').value=c.nom||'';
+  document.getElementById('cfg-type').value=c.type||'';
+  document.getElementById('cfg-achat').value=c.achat||'';
+  document.getElementById('cfg-capa').value=c.capa||'';
+  document.getElementById('cfg-conso').value=c.conso||'';
+  document.getElementById('cfg-vit').value=c.vit||'';
+  document.getElementById('cfg-assurance').value=f.assurance||'';
+  document.getElementById('cfg-assurance-rec').value=f.assuranceRec||'mois';
+  document.getElementById('cfg-port').value=f.port||'';
+  document.getElementById('cfg-port-rec').value=f.portRec||'mois';
+  document.getElementById('cfg-charges').value=f.charges||'';
+  document.getElementById('cfg-charges-rec').value=f.chargesRec||'mois';
+  document.getElementById('cfg-divers').value=f.divers||'';
+  document.getElementById('cfg-pret-total').value=p.total||'';
+  document.getElementById('cfg-pret-mensualite').value=p.mensualite||'';
+  
+  document.getElementById('cfg-pret-reste').value=getRestePret()||'';
+}
+function sauvegarderIdx(){
+  const g = parseFloat(document.getElementById('cfg-idx-g').value);
+  const d = parseFloat(document.getElementById('cfg-idx-d').value);
+  if(isNaN(g) || isNaN(d)) { toast('Les deux index sont obligatoires', 'err'); return; }
+  if(g < 0 || d < 0) { toast('Les index ne peuvent pas être négatifs', 'err'); return; }
+  
+  S.cfg.idxRefG = g;
+  S.cfg.idxRefD = d;
+  if(!S.cfg.dateInit) {
+      S.cfg.dateInit = tsNow();
+  }
+  
+  try { recalculateHistory(true); } 
+  catch(e) { toast(e.message, 'err'); return; }
+  
+  save(); 
+  toast('Index de départ sauvegardés ✓');
+}
+function sauvegarderCfg(){
+  const nom = document.getElementById('cfg-nom').value.trim();
+  let capa = parseFloat(document.getElementById('cfg-capa').value);
+  if(!nom || isNaN(capa)){ toast('Nom et Capacité sont obligatoires','err'); return; }
+  
+  let achat = parseFloat(document.getElementById('cfg-achat').value); if(isNaN(achat)) achat=0;
+  let conso = parseFloat(document.getElementById('cfg-conso').value); if(isNaN(conso)) conso=0;
+  let vit = parseFloat(document.getElementById('cfg-vit').value); if(isNaN(vit)) vit=0;
+  
+  if (capa < 0 || achat < 0 || conso < 0 || vit < 0) {
+      toast('Les valeurs ne peuvent pas être négatives', 'err'); return;
+  }
+
+  const backupS = JSON.stringify(S);
+  
+  S.cfg={
+    ...S.cfg,
+    nom:   nom,
+    type:  document.getElementById('cfg-type').value.trim(),
+    achat: achat,
+    capa:  capa,
+    conso: conso,
+    vit:   vit
+  };
+  
+  try { recalculateHistory(true); } 
+  catch(e) { S = JSON.parse(backupS); toast(e.message, 'err'); return; }
+
+  save(); toast('Paramètres sauvegardés ✓');
+}
+function setNiveau(){
+  const n=parseFloat(document.getElementById('cfg-niveau').value);
+  const p=parseFloat(document.getElementById('cfg-niveau-prix').value);
+  if(isNaN(n) || isNaN(p)){ toast('Litres et Prix sont obligatoires','err'); return; }
+  if(n < 0 || p < 0) { toast('Les valeurs ne peuvent pas être négatives', 'err'); return; }
+  
+  const backupS = JSON.stringify(S);
+  
+  S.cfg.initNiveau = n;
+  S.cfg.initPrix = p;
+  
+  try { recalculateHistory(true); } 
+  catch(e) { S = JSON.parse(backupS); toast(e.message, 'err'); return; }
+  
+  save(); toast('Niveau & Prix initialisés ✓');
+}
+
+function sauvegarderFrais(){
+  let a = parseFloat(document.getElementById('cfg-assurance').value); if(isNaN(a)) a=0;
+  let p = parseFloat(document.getElementById('cfg-port').value); if(isNaN(p)) p=0;
+  let c = parseFloat(document.getElementById('cfg-charges').value); if(isNaN(c)) c=0;
+  let d = parseFloat(document.getElementById('cfg-divers').value); if(isNaN(d)) d=0;
+  
+  if(a < 0 || p < 0 || c < 0 || d < 0) {
+      toast('Les frais ne peuvent pas être négatifs', 'err'); return;
+  }
+
+  S.frais={
+    assurance:    a,
+    assuranceRec: document.getElementById('cfg-assurance-rec').value,
+    port:         p,
+    portRec:      document.getElementById('cfg-port-rec').value,
+    charges:      c,
+    chargesRec:   document.getElementById('cfg-charges-rec').value,
+    divers:       d
+  };
+  save(); toast('Frais sauvegardés ✓');
+}
+function sauvegarderPret(){
+  let t = parseFloat(document.getElementById('cfg-pret-total').value); if(isNaN(t)) t=0;
+  let m = parseFloat(document.getElementById('cfg-pret-mensualite').value); if(isNaN(m)) m=0;
+  let r = parseFloat(document.getElementById('cfg-pret-reste').value); if(isNaN(r)) r=0;
+  
+  if(t < 0 || m < 0 || r < 0) {
+      toast('Les valeurs du prêt ne peuvent pas être négatives', 'err'); return;
+  }
+
+  S.pret={
+    total:       t,
+    mensualite:  m,
+    resteNb:     r,
+    dateRef:     today()
+  };
+  save(); toast('Prêt sauvegardé ✓');
+}
+
+function toMensuel(val,rec){ return rec==='an'?val/12:val; }
+
+function renderSynthese(){
+  const f=S.frais, p=S.pret;
+  const lignes=[];
+  const assM=toMensuel(f.assurance,f.assuranceRec);
+  const portM=toMensuel(f.port,f.portRec);
+  const charM=toMensuel(f.charges,f.chargesRec);
+  const pretM=p.mensualite||0;
+  const divM=f.divers||0;
+  
+  if(assM) lignes.push(['Assurance',assM]);
+  if(portM) lignes.push(['Place de port',portM]);
+  if(charM) lignes.push(['Charges port',charM]);
+  if(pretM) lignes.push(['Mensualité crédit',pretM]);
+  if(divM) lignes.push(['Frais divers',divM]);
+  const totalM=lignes.reduce((a,l)=>a+l[1],0);
+  const totalEss=S.pleins.reduce((a,p)=>a+(p.total||0),0);
+  const totalEnt=S.entretiens.reduce((a,e)=>a+(e.cout||0),0);
+  
+  const el=document.getElementById('synthese-content');
+  if(!lignes.length && !totalEss && !totalEnt){ el.innerHTML='<span style="color:var(--muted);font-size:14px;">Renseigne les frais fixes ci-dessus</span>'; return; }
+  
+  let html='';
+  lignes.forEach(([lbl,val])=>{
+    html+=`<div class="data-line"><span class="data-lbl">${lbl}</span><span class="data-val">${fN(val,2)} €/mois</span></div>`;
+  });
+  if(totalM) html+=`<div class="data-line" style="border-top:2px solid #111;margin-top:4px;padding-top:10px;"><span class="data-lbl" style="font-weight:800;">Total frais fixes</span><span class="data-val" style="font-size:17px;">${fN(totalM,2)} €/mois</span></div>`;
+  
+  const resteNbCalc = getRestePret();
+  if(resteNbCalc && p.mensualite) html+=`<div class="data-line"><span class="data-lbl">Reste à rembourser</span><span class="data-val">${fN(resteNbCalc*p.mensualite,0)} € (${resteNbCalc} mens.)</span></div>`;
+  
+  if(totalEss) html+=`<div class="data-line"><span class="data-lbl">Total essence (historique)</span><span class="data-val">${fN(totalEss,2)} €</span></div>`;
+  if(totalEnt) html+=`<div class="data-line"><span class="data-lbl">Total entretien (historique)</span><span class="data-val">${fN(totalEnt,2)} €</span></div>`;
+  if(totalEss||totalEnt) html+=`<div class="data-line" style="border-top:2px solid #111;margin-top:4px;padding-top:10px;"><span class="data-lbl" style="font-weight:800;">Total variable cumulé</span><span class="data-val" style="font-size:17px;">${fN(totalEss+totalEnt,2)} €</span></div>`;
+  el.innerHTML=html;
+}
+
+function renderDonnees(){
+  const el=document.getElementById('donnees-content');
+  const nbSorties=S.sorties.length;
+  const nmTotal=S.sorties.reduce((a,s)=>a+(s.dist||0),0);
+  const kmTotal=(nmTotal*1.852).toFixed(0);
+  const lTotal=S.sorties.reduce((a,s)=>a+(s.consoL||0),0);
+  const essTotal=S.pleins.reduce((a,p)=>a+(p.total||0),0);
+  const entTotal=S.entretiens.reduce((a,e)=>a+(e.cout||0),0);
+  const pleinsL=S.pleins.reduce((a,p)=>a+(p.litres||0),0);
+  const f=S.frais, p=S.pret;
+  const totalFraisM=(toMensuel(f.assurance,f.assuranceRec))+(toMensuel(f.port,f.portRec))+(toMensuel(f.charges,f.chargesRec))+(p.mensualite||0)+(f.divers||0);
+  const allDates=[...S.sorties,...S.pleins,...S.entretiens].map(x=>x.date||'').filter(Boolean).sort();
+  let fraisTotal=0; let fraisMoisLabel='';
+  if(allDates.length && totalFraisM){
+    const d0=new Date(allDates[0]); const d1=new Date();
+    const mois=Math.max(1,Math.round((d1-d0)/(1000*60*60*24*30.44)));
+    fraisTotal=totalFraisM*mois;
+    fraisMoisLabel=` (${fN(mois,0)} mois × ${fN(totalFraisM,0)} €)`;
+  }
+  let html='';
+  if(S.cfg.achat) html+=`<div class="data-line"><span class="data-lbl">Prix d'achat</span><span class="data-val">${fN(S.cfg.achat,0)} €</span></div>`;
+  html+=`<div class="data-line"><span class="data-lbl">Sorties enregistrées</span><span class="data-val">${fN(nbSorties,0)}</span></div>`;
+  html+=`<div class="data-line"><span class="data-lbl">Distance totale</span><span class="data-val">${fN(nmTotal,1)} milles — ${fN(kmTotal,0)} km</span></div>`;
+  html+=`<div class="data-line"><span class="data-lbl">Essence consommée</span><span class="data-val">${fN(lTotal,1)} L</span></div>`;
+  html+=`<div class="data-line"><span class="data-lbl">Essence achetée</span><span class="data-val">${fN(pleinsL,0)} L</span></div>`;
+  html+=`<div class="data-line"><span class="data-lbl">Coût essence total</span><span class="data-val">${fN(essTotal,2)} €</span></div>`;
+  html+=`<div class="data-line"><span class="data-lbl">Coût entretien total</span><span class="data-val">${fN(entTotal,2)} €</span></div>`;
+  if(fraisTotal) html+=`<div class="data-line"><span class="data-lbl">Frais fixes cumulés</span><span class="data-val">${fN(fraisTotal,0)} €${fraisMoisLabel}</span></div>`;
+  const grandTotal=essTotal+entTotal+fraisTotal+(S.cfg.achat||0);
+  html+=`<div class="data-line" style="border-top:2px solid #111;margin-top:4px;padding-top:10px;"><span class="data-lbl" style="font-weight:800;">Total coût cumulé</span><span class="data-val" style="font-size:16px;">${fN(grandTotal,0)} €</span></div>`;
+  el.innerHTML=html;
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='bateau-'+today()+'.json'; a.click(); URL.revokeObjectURL(url);
+}
+function importData(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=ev=>{
+      try{ 
+          S=JSON.parse(ev.target.result); 
+          save(); 
+          toast('Données importées vers le Cloud ✓'); 
+      }
+      catch{ toast('Fichier invalide','err'); }
+    }; r.readAsText(f);
+  }; inp.click();
+}
+function resetData(){
+  if(!window._rp){ window._rp=true; toast('Appuie encore pour confirmer l\'effacement global','err'); setTimeout(()=>{ window._rp=false; },3000); return; }
+  window._rp=false;
+  S={cfg:{nom:'',type:'',capa:0,conso:0,vit:0,idxRefG:null,idxRefD:null,initNiveau:null,initPrix:null,dateInit:null},frais:{assurance:0,assuranceRec:'mois',port:0,portRec:'mois',charges:0,chargesRec:'mois',divers:0},pret:{total:0,mensualite:0,resteNb:0,dateRef:null},niveau:0,sorties:[],pleins:[],entretiens:[],stock:[]};
+  save(); toast('Base de données réinitialisée', 'err');
+}
+
+function calcAuto(l){
+  if(S.cfg.conso&&S.cfg.vit) return (l/S.cfg.conso*S.cfg.vit).toFixed(1);
+  const ad=S.sorties.filter(s=>s.consoL&&s.dist>0); if(!ad.length) return null;
+  const lpn=ad.reduce((a,s)=>a+(s.consoL/s.dist),0)/ad.length; if(!lpn) return null;
+  return (l/lpn).toFixed(1);
+}
+function consoMoy(){
+  const a=S.sorties.filter(s=>s.consoL); if(!a.length) return null;
+  return (a.reduce((s,x)=>s+x.consoL,0)/a.length).toFixed(1);
+}
+function h(t){ return(t||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let _tt; function toast(msg,type){ clearTimeout(_tt); const el=document.getElementById('toast'); el.textContent=msg; el.className='toast'+(type==='err'?' err':'')+' show'; _tt=setTimeout(()=>el.classList.remove('show'),3000); }
+
+document.getElementById('s-date').value=today();
+document.getElementById('e-date').value=today();
+document.getElementById('p-date').value=today();
+
+// Initialisation de l'affichage par défaut en attendant la connexion
+renderBord();
+</script>
+</body>
+</html>
