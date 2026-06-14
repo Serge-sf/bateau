@@ -44,10 +44,9 @@ html, body {
   .btn-d { background:#fff0ee !important; color:#c0392b !important; }
 }
 
-/* CORRECTION DE L'EN-TÊTE POUR L'IPHONE */
 #header {
   position:fixed; top:0; left:0; right:0; z-index:100;
-  padding:max(env(safe-area-inset-top), 50px) 18px 20px;
+  padding:with(env(safe-area-inset-top), 50px) 18px 20px;
   background:#ffffff; 
   box-shadow: 0 4px 15px rgba(0,0,0,0.06);
   display:flex; align-items:center; justify-content:space-between;
@@ -58,7 +57,6 @@ html, body {
 .jauge-fill { height:100%; border-radius:3px; background:#111; transition:width .4s,background .4s; }
 .jauge-pct  { font-size:13px; font-weight:700; color:#111; min-width:34px; text-align:right; }
 
-/* CORRECTION DE LA BARRE DU BAS POUR L'IPHONE (bords et barre de balayage) */
 #nav {
   position:fixed; bottom:0; left:0; right:0; z-index:100;
   background:#ffffff;
@@ -76,7 +74,6 @@ html, body {
 #nav button .ico { font-size:20px; line-height:1; }
 #nav button.active { background:#111; color:#fff; }
 
-/* CORRECTION DU MARGIN GLOBAL POUR NE PLUS COUPER LE CONTENU */
 #main { 
   padding-top: calc(max(env(safe-area-inset-top), 50px) + 70px); 
   padding-bottom: calc(env(safe-area-inset-bottom) + 130px); 
@@ -175,7 +172,6 @@ html, body {
 
 .recur-select { display:inline-block; width:auto; padding:5px 10px; font-size:13px; border-radius:8px; margin-top:4px; }
 
-/* Styles pour l'écran de connexion */
 #login-screen {
   position:fixed; top:0; left:0; right:0; bottom:0; z-index:99999;
   background: var(--bg); display:flex; align-items:center; justify-content:center;
@@ -187,7 +183,6 @@ html, body {
 }
 </style>
 
-<!-- MODULE FIREBASE -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -207,7 +202,6 @@ html, body {
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Fonction de connexion exposée globalement
   window.appLogin = () => {
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-pass').value;
@@ -221,31 +215,26 @@ html, body {
     });
   };
 
-  // Fonction de déconnexion exposée globalement
   window.appLogout = () => {
     signOut(auth).then(() => {
         window.location.reload();
     });
   };
 
-  // Sauvegarde Firebase exposée globalement
   window.saveToCloud = (data) => {
     setDoc(doc(db, "bateau", "donneesFamille"), data).catch(error => {
         toast("Erreur de sauvegarde Cloud", "err");
     });
   };
 
-  // Ecoute de l'état de connexion en temps réel
   onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-wrapper').style.display = 'block';
         
-        // Branchement à la base de données temps réel
         onSnapshot(doc(db, "bateau", "donneesFamille"), (docSnap) => {
             if (docSnap.exists()) {
                 window.S = docSnap.data();
-                // Sécurisation de la structure des données au cas où
                 window.S.frais = Object.assign({assurance:0,assuranceRec:'mois',port:0,portRec:'mois',charges:0,chargesRec:'mois',divers:0}, window.S.frais||{});
                 window.S.pret = Object.assign({total:0,mensualite:0,resteNb:0,dateRef:null}, window.S.pret||{});
                 window.S.cfg = Object.assign({idxRefG:null, idxRefD:null, initNiveau:null, initPrix:null, dateInit:null}, window.S.cfg||{});
@@ -254,7 +243,6 @@ html, body {
                 try { recalculateHistory(); } catch(e) {}
                 if(window.updateUI) window.updateUI();
             } else {
-                // Création initiale du document si la base est vide
                 window.saveToCloud(window.S);
             }
         });
@@ -267,7 +255,6 @@ html, body {
 </head>
 <body>
 
-<!-- ECRAN DE CONNEXION -->
 <div id="login-screen">
   <div class="login-card">
      <h2 style="margin-bottom:15px;font-size:22px;font-weight:900;letter-spacing:-1px;">⚓ Bateau</h2>
@@ -279,7 +266,6 @@ html, body {
   </div>
 </div>
 
-<!-- APPLICATION PRINCIPALE -->
 <div id="app-wrapper" style="display:none;">
 
 <div id="header">
@@ -292,7 +278,6 @@ html, body {
 
 <div id="main">
 
-  <!-- BORD -->
   <div class="panel active" id="panel-bord">
     <div class="card">
       <div class="card-title">Réservoir</div>
@@ -337,7 +322,6 @@ html, body {
     </div>
   </div>
 
-  <!-- SORTIE -->
   <div class="panel" id="panel-sortie">
     <h2 style="font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:14px;">Nouvelle sortie</h2>
     <div class="card">
@@ -364,13 +348,11 @@ html, body {
     <button class="btn btn-g" id="btn-enreg" style="display:none;" onclick="enregistrerSortie()">✅ Valider et enregistrer</button>
   </div>
 
-  <!-- JOURNAL -->
   <div class="panel" id="panel-journal">
     <h2 style="font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:14px;">Journal de bord</h2>
     <div id="journal-list"></div>
   </div>
 
-  <!-- ENTRETIEN -->
   <div class="panel" id="panel-entretien">
     <div class="card">
       <div class="card-title">Nouvelle intervention / dépense</div>
@@ -384,7 +366,6 @@ html, body {
     </div>
   </div>
 
-  <!-- RÉGLAGES -->
   <div class="panel" id="panel-reglages">
 
     <div class="card">
@@ -469,11 +450,8 @@ html, body {
     </div>
 
     <div class="card">
-      <div class="card-title">Outils & Sécurité</div>
-      <button class="btn btn-s" onclick="exportData()">⬇️ Sauvegarder une copie JSON</button>
-      <button class="btn btn-s" onclick="importData()">⬆️ Importer une sauvegarde JSON</button>
-      <button class="btn btn-d" onclick="resetData()" style="margin-top: 15px;">🗑️ Tout effacer (Cloud inclus)</button>
-      <button class="btn btn-d" onclick="appLogout()" style="background:#111; color:white; border:none; margin-top: 15px;">🚪 Se déconnecter</button>
+      <div class="card-title">Sécurité</div>
+      <button class="btn btn-d" onclick="appLogout()" style="background:#111; color:white; border:none;">🚪 Se déconnecter</button>
     </div>
 
     <p style="font-size:12px;color:var(--muted);text-align:center;padding:4px 10px 20px;line-height:1.7;">
@@ -483,7 +461,6 @@ html, body {
 
 </div>
 
-<!-- Modal Modification -->
 <div id="modal-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;padding:20px;align-items:center;justify-content:center;">
   <div class="card" style="width:100%;max-width:400px;margin:0;max-height:90vh;overflow-y:auto;">
     <div class="card-title" id="me-title" style="font-size:14px;color:#111;">Modifier l'entrée</div>
@@ -503,12 +480,9 @@ html, body {
   <button onclick="goTab('reglages',this)"><span class="ico">⚙️</span>Réglages</button>
 </div>
 
-</div> <!-- Fin de app-wrapper -->
-
-<div class="toast" id="toast"></div>
+</div> <div class="toast" id="toast"></div>
 
 <script>
-// La base de données globale
 var S = {
   cfg:{nom:'',type:'',achat:0,capa:0,conso:0,vit:0, idxRefG:null, idxRefD:null, initNiveau:null, initPrix:null, dateInit:null},
   frais:{assurance:0,assuranceRec:'mois',port:0,portRec:'mois',charges:0,chargesRec:'mois',divers:0},
@@ -516,7 +490,6 @@ var S = {
   niveau:0, sorties:[], pleins:[], entretiens:[], stock:[]
 };
 
-// Fonction de mise à jour appelée automatiquement par le Cloud à chaque changement
 window.updateUI = function() {
   const activePanel = document.querySelector('.panel.active');
   if(activePanel.id === 'panel-bord') renderBord();
@@ -528,14 +501,12 @@ window.updateUI = function() {
   }
 }
 
-// Remplacement de la sauvegarde locale par la sauvegarde Cloud
 function save(){ 
     if(window.saveToCloud) {
         window.saveToCloud(S);
     }
 }
 
-// Formateur de nombres : ajoute un espace pour les milliers, préserve les décimales
 function fN(n, dec=0) {
   if(n==null || isNaN(n)) return '';
   let parts = Number(n).toFixed(dec).split('.');
@@ -1371,32 +1342,6 @@ function renderDonnees(){
   el.innerHTML=html;
 }
 
-function exportData(){
-  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a');
-  a.href=url; a.download='bateau-'+today()+'.json'; a.click(); URL.revokeObjectURL(url);
-}
-function importData(){
-  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
-  inp.onchange=e=>{
-    const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader(); r.onload=ev=>{
-      try{ 
-          S=JSON.parse(ev.target.result); 
-          save(); 
-          toast('Données importées vers le Cloud ✓'); 
-      }
-      catch{ toast('Fichier invalide','err'); }
-    }; r.readAsText(f);
-  }; inp.click();
-}
-function resetData(){
-  if(!window._rp){ window._rp=true; toast('Appuie encore pour confirmer l\'effacement global','err'); setTimeout(()=>{ window._rp=false; },3000); return; }
-  window._rp=false;
-  S={cfg:{nom:'',type:'',capa:0,conso:0,vit:0,idxRefG:null,idxRefD:null,initNiveau:null,initPrix:null,dateInit:null},frais:{assurance:0,assuranceRec:'mois',port:0,portRec:'mois',charges:0,chargesRec:'mois',divers:0},pret:{total:0,mensualite:0,resteNb:0,dateRef:null},niveau:0,sorties:[],pleins:[],entretiens:[],stock:[]};
-  save(); toast('Base de données réinitialisée', 'err');
-}
-
 function calcAuto(l){
   if(S.cfg.conso&&S.cfg.vit) return (l/S.cfg.conso*S.cfg.vit).toFixed(1);
   const ad=S.sorties.filter(s=>s.consoL&&s.dist>0); if(!ad.length) return null;
@@ -1414,7 +1359,6 @@ document.getElementById('s-date').value=today();
 document.getElementById('e-date').value=today();
 document.getElementById('p-date').value=today();
 
-// Initialisation de l'affichage par défaut en attendant la connexion
 renderBord();
 </script>
 </body>
